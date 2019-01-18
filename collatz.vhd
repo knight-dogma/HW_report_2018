@@ -6,18 +6,18 @@ use IEEE.NUMERIC_STD.ALL;
 
 entity Collatz is
   port(
-    CLK : in std_logic;
-    RESET : in std_logic;
-    START : in std_logic_vector(9 downto 0);
-    PEAK : out std_logic_vector(17 downto 0);
-    LEN : out std_logic_vector(7 downto 0);
-    FIN : out std_logic);
+    CLK : in std_logic := '0';
+    RESET : in std_logic := '0';
+    START : in std_logic_vector(9 downto 0) := (others => '0');
+    PEAK : out std_logic_vector(17 downto 0) := (others => '0');
+    LEN : out std_logic_vector(7 downto 0) := (others => '0');
+    FIN : out std_logic := '0');
 end Collatz;
 
 architecture Collatz_Body of Collatz is
-  SIGNAL TMP_PLACE : std_logic_vector(17 downto 0);
-  SIGNAL TMP_PEAK : std_logic_vector(17 downto 0);
-  SIGNAL TMP_LEN : std_logic_vector(7 downto 0);
+  SIGNAL TMP_PLACE : std_logic_vector(17 downto 0) := (others => '0');
+  SIGNAL TMP_PEAK : std_logic_vector(17 downto 0) := (others => '0');
+  SIGNAL TMP_LEN : std_logic_vector(7 downto 0) := (others => '0');
   constant three : std_logic_vector(17 downto 0) := "000000000000000011";
   begin
   Climb : process (CLK, RESET, START)
