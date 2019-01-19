@@ -23,6 +23,7 @@ architecture behaviour of testbench is
   signal top4 : sets4_t := (others => ((others => '0'), (others => '0'), (others => '0')));
   signal alldone : std_logic := '0';
   signal finished : std_logic := '0';
+  signal printed : std_logic := '0';
 
 begin
   main : whole port map(
@@ -44,6 +45,10 @@ begin
   begin
     if rising_edge(clk) and alldone = '1' and finished = '0' then
       finished <= '1';
+    end if;
+
+    if finished = '1' and printed = '0' then
+      printed <= '1';
       report "results";
       report "clocks:" & integer'image(to_integer(unsigned(clk_count)));
       for i in 0 to 3 loop
