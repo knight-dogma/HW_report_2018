@@ -13,4 +13,9 @@ package types is
 
   type sets4_t is array(0 to 3) of set_t;
   type sets5_t is array(0 to 4) of set_t;
+
+  type data_t is record
+    peak : std_logic_vector(17 downto 0);
+    len : std_logic_vector(7 downto 0);
+  end record;
 end package types;
