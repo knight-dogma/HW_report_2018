@@ -45,55 +45,46 @@ architecture whole_body of whole is
   end component;
 
   signal clk_count_reg : std_logic_vector(31 downto 0) := (others => '0');
-
   signal alldone_reg : std_logic := '0';
-
-  signal go : std_logic := '1';
-  signal start : std_logic_vector(8 downto 0) := (others => '0');
+  signal write : std_logic := '0';
+  signal set : set_t := ((others => '0'), (others => '0'), (others => '0'));
+  signal reset : std_logic := '1';
+  signal start : std_logic_vector(9 downto 0) := "0000000001";
+  signal data : data_t := ((others => '0'), (others => '0'));
+  signal data_to_ram : data_t := ((others => '0'), (others => '0'));
   signal peak : std_logic_vector(17 downto 0) := (others => '0');
   signal len : std_logic_vector(7 downto 0) := (others => '0');
-  signal done : std_logic_vector(1 downto 0) := (others => '0');
-
-  signal start_set : std_logic_vector(9 downto 0) := (others => '0');
-  signal set_reg : set_t := ((others => '0'), (others => '0'), (others => '0'));
-
-  signal write : std_logic := '0';
+  signal fin : std_logic := '0';
+  signal fin_prev : std_logic := '0';
+  signal start_addr : std_logic_vector(8 downto 0) := (others => '0');
   signal addr : std_logic_vector(8 downto 0) := (others => '0');
   signal addr_ram : std_logic_vector(8 downto 0) := (others => '0');
-  signal data_in : data_t := ((others => '0'), (others => '0'));
-  signal data_out : data_t := ((others => '0'), (others => '0'));
-
 
 begin
-  sorter_p : sorter port map(
-    clk => clk,
-    set => set_reg,
-    top4 => top4
-  );
-
-  collatz_p : collatz port map(
+  collatz_ports : collatz port map(
     CLK => clk,
-    RESET => go,
-    START => start_set,
-    DATA => data_out,
+    RESET => reset,
+    START => start,
+    DATA => data,
     PEAK => peak,
     LEN => len,
-    FIN => done(0),
+    FIN => fin,
     ADDR => addr
   );
 
-  ram_p : RAM port map (
+  sorter_ports : sorter port map(
     clk => clk,
-    write => write,
-    addr => addr_ram,
-    data_in => data_in,
-    data_out => data_out
+    set => set,
+    top4 => top4
   );
 
-  clk_count <= clk_count_reg;
-  start_set <= start & '1';
-  data_in <= (peak, len);
-  --addr_ram <= start - 1 when write = '1' else addr;
+  ram_ports : RAM port map(
+    addr => addr_ram,
+    data_in => data_to_ram,
+    write => write,
+    clk => clk,
+    data_out => data
+  );
 
   process(clk, alldone_reg)
   begin
@@ -103,25 +94,30 @@ begin
   end process;
 
   process(clk)
+    variable next_start_addr : std_logic_vector(8 downto 0) := (others => '0');
   begin
     if rising_edge(clk) then
-      if done = "01" and alldone_reg = '0' then
-        set_reg <= (start & '1', peak, len);
+      if fin = '1' and fin_prev = '0' and alldone_reg = '0' then
+        next_start_addr := start_addr + 1;
+        start_addr <= next_start_addr;
+        start <= next_start_addr & '1';
         write <= '1';
-        addr_ram <= start;
-        start <= start + 1;
-
-        if start >= 511 then
-          alldone <= '1';
-        else
-          go <= '1';
+        addr_ram <= start_addr;
+        data_to_ram <= (peak, len);
+        set <= (start_addr & '1', peak, len);
+        reset <= '1';
+        if start_addr = 511 then
+          alldone_reg <= '1';
         end if;
       else
         write <= '0';
-        go <= '0';
         addr_ram <= addr;
+        reset <= '0';
       end if;
-      done(1) <= done(0);
+      alldone <= alldone_reg;
+      fin_prev <= fin;
     end if;
   end process;
+  start <= start_addr & '1';
+  clk_count <= clk_count_reg;
 end whole_body;
